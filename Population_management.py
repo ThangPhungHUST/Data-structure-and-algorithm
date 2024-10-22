@@ -1,3 +1,4 @@
+# Đọc từ file danso.txt
 def print_range(dic, val):
 	for key, value in dic.items():
 		if value == val:

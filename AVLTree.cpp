@@ -16,8 +16,12 @@ int max(int a, int b) {
 	return a >= b ? a : b;
 }
 
-int isBalance(AVLNode* t) {
+int GetHeight(AVLNode* t) {
 	return t == NULL ? 0 : height(t->left) - height(t->right);
+}
+
+bool isBalance(AVLNode* t){
+	return GetHeight(t) <= 1 && GetHeight(t) >= -1 ? true : false;
 }
 
 void rotateWithLeftChild(AVLNode*& k2) {
@@ -45,9 +49,9 @@ void DoubleWithRightChild(AVLNode*& k3) {
 	rotateWithRightChild(k3);
 }
 void balance(AVLNode*& t) {
-	int b = isBalance(t);
+	int b = GetHeight(t);
 	if (b > 1) {
-		if (isBalance(t->left) >= 0) {
+		if (GetHeight(t->left) >= 0) {
 			rotateWithLeftChild(t);
 		}
 		else {
@@ -55,7 +59,7 @@ void balance(AVLNode*& t) {
 		}
 	}
 	if (b < -1) {
-		if (isBalance(t->right) <= 0) {
+		if (GetHeight(t->right) <= 0) {
 			rotateWithRightChild(t);
 		}
 		else {
@@ -131,8 +135,7 @@ int main() {
 		insert(t, A[i]);
 	}
 	printPreO(t);
-	bool yes = (isBalance(t) <= 1) && (isBalance(t) >= -1);
-	cout << "\nCay " << (yes ? "da " : "chua ") << "can bang" << endl;
+	cout << "\nCay " << (isBalance(t) ? "da " : "chua ") << "can bang" << endl;
 	
 	cout << "-----------" << endl;
 	
@@ -141,7 +144,7 @@ int main() {
 		for (int j = 0; j < 12; j++) {
 			insert_balance(q, A[j]);
 		}
-		cout << "Cay " << ((isBalance(q) <= 1) && (isBalance(q) >= -1) ? "da " : "chua ") << "can bang" << endl;
+		cout << "Cay " << (isBalance(q) ? "da " : "chua ") << "can bang" << endl;
 		printPreO(q);
 	}
 }

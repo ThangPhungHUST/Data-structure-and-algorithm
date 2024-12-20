@@ -1,133 +1,186 @@
-#include <iostream>
+﻿#include <iostream>
 using namespace std;
 
-const int MAX = 50;
-
-typedef struct Node {
-    char data;
-    Node* left, * right;
-} Node;
-
-bool isEmpty(Node* T) {
-    return T == NULL;
+bool mystrcmp(const char* s1, const char* s2) {
+	int i = 0;
+	while (s1[i] && s2[i]) {
+		if (s1[i] != s2[i++]) {
+			return false;
+		}
+	}
+	return true;
 }
 
-Node* newNode(char data) {
-    Node* node = new Node;
-    node->data = data;
-    node->left = NULL;
-    node->right = NULL;
-    return node;
+void mystrcpy(char* s1, const char* s2) {
+	int i = 0;
+	while (s2[i]) {
+		s1[i] = s2[i++];
+	}
+	s1[i] = '\0';
 }
 
-bool isOperator(char s) {
-    switch (s) {
-    case '+':
-    case '-':
-    case '*':
-    case '/':
-    case '^':
-        return true;
-    default:
-        return false;
-    }
+void mygets(char* s, int maxLen) {
+	int i = 0;
+	char c;
+	while ((c = getchar()) != '\n' && i < maxLen - 1) {
+		s[i++] = c;
+	}
+	s[i] = '\0';
 }
 
-typedef struct stack {
-    int Top;
-    Node* data[MAX];
-} stack;
-
-void init(stack& s) {
-    s.Top = 0;
+int mystrlen(const char* s) {
+	int i = 0, c = 0;
+	while (s[i++]) {
+		c++;
+	}
+	return c;
 }
 
-bool isempty(stack& s) {
-    return s.Top == 0;
+struct Node {
+	char* title;
+	int start;
+	int end;
+	int numchild;
+	Node** children;
+	~Node() {
+		delete[] title;
+		if (children != nullptr) {
+			for (int i = 0; i < numchild; ++i) {
+				delete children[i];
+			}
+			delete[] children;
+		}
+	}
+};
+
+void print(Node* node, int level = 0) {
+	if (node == NULL) {
+		return;
+	}
+	for (int i = 0; i < level; i++) {
+		cout << "    ";
+	}
+	cout << node->title << (level == 0 ? "" : " ..........") << " (" << node->start << "-" << node->end << ")" << endl;
+	for (int j = 0; j < node->numchild; j++) {
+		print(node->children[j], level + 1);
+	}
 }
 
-bool isfull(stack& s) {
-    return s.Top == MAX;
+void create(Node* root) {
+	const int MAX_TITLE_LEN = 256;
+	char tmp[MAX_TITLE_LEN];
+	
+	cout << "Nhap tieu de: ";
+	mygets(tmp, MAX_TITLE_LEN);
+	
+	int len = mystrlen(tmp);
+	root->title = new char[len + 1];
+	mystrcpy(root->title, tmp);
+
+	cout << "Nhap so trang bat dau: ";
+	cin >> root->start;
+	cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+	cout << "Nhap so trang ket thuc: ";
+	cin >> root->end;
+	cin.ignore(numeric_limits<streamsize>::max(), '\n');
+	
+	cout << "Nhap so luong de muc con (Nhap 0 de ket thuc): ";
+	cin >> root->numchild;
+	cin.ignore(numeric_limits<streamsize>::max(), '\n');
+	
+	if (root->numchild > 0) {
+		root->children = new Node * [root->numchild];
+		for (int i = 0; i < root->numchild; i++) {
+			root->children[i] = new Node;
+			create(root->children[i]);
+		}
+	}
 }
 
-void push(stack& s, Node* t) {
-    if (isfull(s)) {
-        cout << "Stack Overflow" << endl;
-    }
-    else {
-        s.data[s.Top++] = t;
-    }
+int countchapter(Node* root) {
+	return root->numchild;
 }
 
-Node* pop(stack& s) {
-    if (isempty(s)) {
-        cout << "Stack Underflow" << endl;
-    }
-    else {
-        Node* x = s.data[--s.Top];
-        return x;
-    }
+void findlargestchapter(Node* root) {
+	if (!root) {
+		return;
+	}
+	int largest = 0;
+	int j = 0;
+	for (int i = 0; i < root->numchild; i++) {
+		if (root->children[i]->end - root->children[i]->start + 1 > largest) {
+			largest = root->children[i]->end - root->children[i]->start + 1;
+			j = i;
+		}
+	}
+
+	cout << "Chuong dai nhat cua cuon sach la: " << root->children[j]->title << " voi " << largest << " trang." << endl;
 }
 
-Node* top(stack s) {
-    return s.data[s.Top];
+bool find_and_remove_title(Node* root, const char* s, char* s1, int& total) {
+	if (!root) return false;
+
+	for (int i = 0; i < root->numchild; i++) {
+		if (mystrcmp(root->children[i]->title, s)) {
+			total = root->children[i]->end - root->children[i]->start + 1;
+			for (int j = i; j < root->numchild - 1; j++) {
+				root->children[j] = root->children[j + 1];
+				root->children[j]->start -= total;
+				root->children[j]->end -= total;
+			}
+			root->children[root->numchild - 1] = NULL;
+			root->numchild--;
+			mystrcpy(s1, root->children[i]->title);
+			return true;
+		}
+		else  {
+			find_and_remove_title(root->children[i], s, s1, total);
+		}
+	}
 }
 
-Node* constructTree(const char* s) {
-    stack st;
-    init(st);
-    Node* t = NULL;
-    int i = 0;
-    while (s[i]) {
-        if (!isOperator(s[i])) {
-            t = newNode(s[i]);
-            push(st, t);
-        }
-        else {
-            t = newNode(s[i]);
-            t->right = pop(st);
-            t->left = pop(st);
-            push(st, t);
-        }
-        i++;
-    }
-    t = pop(st);
-    return t;
+bool isinthis(Node* root, const char* s) {
+	if (!root) return false;
+	if (mystrcmp(root->title, s)) {
+		return true;
+	}
+	else {
+		for (int i = 0; i < root->numchild; i++) {
+			isinthis(root->children[i], s);
+		}
+	}
+}
+void update(Node* root, const char* s) {
+	int total = 0;
+	int c = 0;
+	char* s1 = new char[256];
+	if (find_and_remove_title(root, s, s1, total)) {
+		cout << "Da xoa muc luc: " << s << endl;
+		for (int i = 0; i < root->numchild; i++) {
+			bool trueorfalse = isinthis(root->children[i], s1);
+			if (trueorfalse || c) {
+				root->children[i]->start -= ((root->children[i]->start == 1) || trueorfalse ? 0 : total);
+				root->children[i]->end -= total;
+				c = 1;
+			}
+		}
+		root->end -= total;
+	}
+	else {
+		cout << "Khong tim thay" << endl;
+	}
 }
 
-void preorder(Node* T) {
-    if (!isEmpty(T)) {
-        cout << T->data << " ";
-        preorder(T->left);
-        preorder(T->right);
-    }
-}
-
-void inorder(Node* T) {
-    if (!isEmpty(T)) {
-        inorder(T->left);
-        cout << T->data << " ";
-        inorder(T->right);
-    }
-}
-
-void lastorder(Node* T) {
-    if (!isEmpty(T)) {
-        lastorder(T->left);
-        lastorder(T->right);
-        cout << T->data << " ";
-    }
-}
 
 int main() {
-    Node* T = constructTree("a5*bc6^d/*-hf-e12/^*+");
-    cout << "Tien to: ";
-    preorder(T);
-    cout << "\n-------\n";
-    cout << "Trung to: ";
-    inorder(T);
-    cout << "\n-------\n";
-    cout << "Hau to: ";
-    lastorder(T);
-    return 0;
+	Node* root = new Node;
+	create(root);
+	print(root);
+	cout << "So chuong cua cuon sach la: " << countchapter(root) << endl;
+	findlargestchapter(root);
+	update(root, "sec1");
+	print(root);
+	delete root;
+	return 0;
 }
